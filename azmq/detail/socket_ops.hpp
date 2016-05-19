@@ -88,6 +88,18 @@ namespace detail {
             }
             return socket_type(res);
         }
+        
+        static socket_type attach_socket(context_ops::context_type context,
+                                         void* handle, 
+                                         boost::system::error_code & ec ) {
+            BOOST_ASSERT_MSG(context, "Invalid context");
+            if (!handle) {
+                ec = make_error_code();
+                return socket_type();
+            }
+            socket_type retval(handle);
+            return retval;
+        }
 
         static stream_descriptor get_stream_descriptor(boost::asio::io_service & io_service,
                                                        socket_type & socket,

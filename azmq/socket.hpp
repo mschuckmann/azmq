@@ -110,6 +110,15 @@ public:
             throw boost::system::system_error(ec);
     }
 
+    explicit socket(boost::asio::io_service& ios,
+                    void* handle,
+                    bool optimize_single_threaded = false)
+            : azmq::detail::basic_io_object<detail::socket_service>(ios) {
+        boost::system::error_code ec;
+        if (get_service().do_open(implementation, handle, optimize_single_threaded, ec))
+            throw boost::system::system_error(ec);
+    }
+
     socket(socket&& other)
         : azmq::detail::basic_io_object<detail::socket_service>(other.get_io_service()) {
         get_service().move_construct(implementation,
@@ -127,6 +136,11 @@ public:
     socket(const socket &) = delete;
     socket & operator=(const socket &) = delete;
 
+
+    void release() {
+        get_service().do_detach(implementation);
+    }
+    
     /** \brief Accept incoming connections on this socket
      *  \param addr std::string zeromq URI to bind
      *  \param ec error_code to capture error

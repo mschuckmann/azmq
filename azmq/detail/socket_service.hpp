@@ -102,6 +102,21 @@ namespace detail {
                 optimize_single_threaded_ = optimize_single_threaded;
             }
 
+            void do_open(boost::asio::io_service & ios,
+                         context_type & ctx,
+                         void* handle,
+                         bool optimize_single_threaded,
+                         boost::system::error_code & ec) {
+                BOOST_ASSERT_MSG(!socket_, "socket already open");
+                socket_ = socket_ops::attach_socket(ctx, handle, ec);
+                if (ec) return;
+
+                sd_ = socket_ops::get_stream_descriptor(ios, socket_, ec);
+                if (ec) return;
+
+                optimize_single_threaded_ = optimize_single_threaded;
+            }
+
             int events_mask() const
             {
                 static_assert(2 == max_ops, "2 == max_ops");
@@ -225,6 +240,23 @@ namespace detail {
                 impl.reset();
             return ec;
         }
+
+        boost::system::error_code do_open(implementation_type & impl,
+                                          void* handle,
+                                          bool optimize_single_threaded,
+                                          boost::system::error_code & ec) {
+            BOOST_ASSERT_MSG(impl, "impl");
+            impl->do_open(get_io_service(), ctx_, handle, optimize_single_threaded, ec);
+            if (ec)
+                impl.reset();
+            return ec;
+        }
+        
+        void do_detach( implementation_type & impl ) {
+            BOOST_ASSERT_MSG(impl, "impl");
+            impl->socket_.release();
+        }
+
 
         void destroy(implementation_type & impl) {
             impl.reset();
